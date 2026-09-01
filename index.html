@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+anger{backg<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
@@ -78,6 +78,7 @@ input[type=range]{width:100%;}
     <div class="card">
       <div class="row"><span>حالة البوت</span><span class="badge off" id="botStatus">متوقف</span></div>
       <div class="row"><span>حساب MT5</span><span class="badge" id="mt5Home">غير متصل</span></div>
+      <div class="row"><span>الاستراتيجية</span><span class="badge" id="strategyHome">MA + RSI</span></div>
     </div>
     <div class="card">
       <button onclick="startBot()">ابدأ التداول</button>
@@ -124,6 +125,16 @@ input[type=range]{width:100%;}
 
   <div id="tabSettings" class="tab">
     <div class="card">
+      <label>استراتيجية التداول</label>
+      <select id="strategyType">
+        <option value="ma_rsi">متوسطات متحركة + RSI (موصى بها)</option>
+        <option value="rsi_only">RSI فقط</option>
+        <option value="ma_only">متوسطات متحركة فقط</option>
+        <option value="breakout">اختراق الدعم والمقاومة</option>
+      </select>
+      <button class="secondary" onclick="saveStrategy()">حفظ الاستراتيجية</button>
+    </div>
+    <div class="card">
       <div class="row"><span>نسبة المخاطرة</span><span id="riskView">1%</span></div>
       <input type="range" min="1" max="100" value="1" id="riskRange"
         oninput="document.getElementById('riskView').textContent=this.value+'%'">
@@ -155,6 +166,13 @@ const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 let UID = null;
+
+const STRATEGY_NAMES = {
+  ma_rsi: 'MA + RSI',
+  rsi_only: 'RSI',
+  ma_only: 'MA',
+  breakout: 'Breakout'
+};
 
 function show(id){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
@@ -221,8 +239,17 @@ async function loadSettings(){
     document.getElementById('riskView').textContent = data.risk_percent + '%';
     document.getElementById('maxLoss').value = data.max_daily_loss_percent;
     document.getElementById('maxTrades').value = data.max_open_trades;
+    document.getElementById('strategyType').value = data.strategy_type || 'ma_rsi';
+    document.getElementById('strategyHome').textContent = STRATEGY_NAMES[data.strategy_type] || 'MA + RSI';
     setBotBadge(data.bot_status);
   }
+}
+
+async function saveStrategy(){
+  const v = document.getElementById('strategyType').value;
+  await sb.from('bot_settings').update({ strategy_type: v }).eq('user_id', UID);
+  document.getElementById('strategyHome').textContent = STRATEGY_NAMES[v] || v;
+  alert('تم حفظ الاستراتيجية بنجاح.');
 }
 
 function setBotBadge(st){
@@ -336,4 +363,4 @@ sb.auth.getSession().then(function(res){
 });
 </script>
 </body>
-</html>
+</html>round:var(--red);color:#fff
