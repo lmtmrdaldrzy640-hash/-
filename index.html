@@ -6,29 +6,37 @@
 <meta name="theme-color" content="#0B1220">
 <title>AutoMT5 Bot</title>
 <style>
-  :root{
-    --bg:#0B1220; --card:#111A2E; --green:#16C784; --red:#EA3943; --blue:#3B82F6;
-    --text:#ffffff; --muted:#94A3B8;
-  }
-  *{box-sizing:border-box; font-family:Tahoma, Arial, sans-serif;}
-  body{margin:0; background:var(--bg); color:var(--text);}
-  .screen{display:none; min-height:100vh; padding:16px; max-width:480px; margin:auto;}
-  .screen.active{display:block;}
-  h1{text-align:center; margin:24px 0 4px;}
-  .sub{text-align:center; color:var(--muted); margin-bottom:24px;}
-  .card{background:var(--card); border-radius:16px; padding:16px; margin-bottom:12px;}
-  label{display:block; color:var(--muted); margin:8px 0 4px;}
-  input{width:100%; padding:12px; border-radius:10px; border:1px solid #22304a; background:#0B1220; color:#fff;}
-  button{width:100%; padding:14px; border:none; border-radius:12px; background:var(--green); color:#04281c; font-weight:bold; font-size:16px; margin-top:12px;}
-  button.secondary{background:#1B2A44; color:var(--text);}
-  button.danger{background:var(--red); color:#fff;}
-  .link{color:var(--blue); text-align:center; display:block; margin-top:12px; cursor:pointer;}
-  .row{display:flex; justify-content:space-between; margin:6px 0;}
-  .muted{color:var(--muted);}
-  .badge{padding:4px 10px; border-radius:999px; background:#1B2A44; color:var(--muted);}
-  .badge.on{background:#0E3B2E; color:var(--green);}
-  #msg,#msg2{min-height:20px; text-align:center; margin-top:8px;}
-  .err{color:var(--red);} .ok{color:var(--green);}
+:root{--bg:#0B1220;--card:#111A2E;--card2:#16233C;--green:#16C784;--red:#EA3943;--blue:#3B82F6;--text:#fff;--muted:#94A3B8;--border:#22304a;}
+*{box-sizing:border-box;font-family:Tahoma,Arial,sans-serif;-webkit-tap-highlight-color:transparent;}
+body{margin:0;background:var(--bg);color:var(--text);}
+.screen{display:none;min-height:100vh;max-width:480px;margin:auto;padding:16px 16px 95px;}
+.screen.active{display:block;}
+h1{text-align:center;margin:20px 0 4px;font-size:26px;}
+.sub{text-align:center;color:var(--muted);margin-bottom:20px;font-size:13px;}
+.card{background:var(--card);border-radius:16px;padding:16px;margin-bottom:12px;border:1px solid var(--border);}
+label{display:block;color:var(--muted);margin:8px 0 4px;font-size:13px;}
+input{width:100%;padding:12px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:#fff;}
+button{width:100%;padding:14px;border:none;border-radius:12px;background:var(--green);color:#04281c;font-weight:bold;font-size:16px;margin-top:10px;}
+button.secondary{background:#1B2A44;color:var(--text);}
+button.danger{background:var(--red);color:#fff;}
+.link{color:var(--blue);text-align:center;display:block;margin-top:12px;cursor:pointer;}
+.row{display:flex;justify-content:space-between;align-items:center;margin:6px 0;}
+.muted{color:var(--muted);font-size:12px;}
+.badge{padding:4px 12px;border-radius:999px;background:#1B2A44;color:var(--muted);font-size:12px;}
+.badge.on{background:#0E3B2E;color:var(--green);}
+.badge.off{background:#3a1420;color:var(--red);}
+#msg,#msg2{min-height:20px;text-align:center;margin-top:8px;font-size:13px;}
+.err{color:var(--red);} .ok{color:var(--green);}
+.green{color:var(--green);} .red{color:var(--red);}
+.nav{position:fixed;bottom:0;left:0;right:0;max-width:480px;margin:auto;background:#0E1626;border-top:1px solid var(--border);display:none;justify-content:space-around;padding:8px 0;z-index:10;}
+.nav.active{display:flex;}
+.nav button{width:auto;background:none;color:var(--muted);font-size:11px;margin:0;padding:4px 12px;border-radius:10px;}
+.nav button .ic{display:block;font-size:20px;margin-bottom:2px;}
+.nav button.sel{color:var(--green);}
+.tab{display:none;}
+.tab.active{display:block;}
+.item{background:var(--card2);border-radius:12px;padding:10px 12px;margin-bottom:8px;font-size:13px;}
+input[type=range]{width:100%;}
 </style>
 </head>
 <body>
@@ -62,70 +70,96 @@
   </div>
 </div>
 
-<div id="dashScreen" class="screen">
+<div id="appScreen" class="screen">
   <h1>AutoMT5 Bot</h1>
   <div class="sub" id="welcome"></div>
 
-  <div class="card">
-    <div class="row"><span>حالة البوت</span><span class="badge" id="botStatus">متوقف</span></div>
-    <div class="row"><span>حساب MT5</span><span class="badge">غير متصل</span></div>
-  </div>
-
-  <div class="card">
-    <div class="row"><span>نسبة المخاطرة</span><span id="riskView">1%</span></div>
-    <input type="range" min="1" max="100" value="1" id="riskRange"
-      oninput="document.getElementById('riskView').textContent=this.value+'%'">
-    <button class="secondary" onclick="saveRisk()">حفظ نسبة المخاطرة</button>
-  </div>
-
-  <div class="card">
-    <button onclick="startBot()">ابدأ التداول</button>
-    <button class="danger" onclick="stopBot()">إيقاف التداول</button>
-    <div class="muted" style="text-align:center;margin-top:8px">
-      سيتم تفعيل التداول بعد ربط خادم MT5
+  <div id="tabHome" class="tab active">
+    <div class="card">
+      <div class="row"><span>حالة البوت</span><span class="badge off" id="botStatus">متوقف</span></div>
+      <div class="row"><span>حساب MT5</span><span class="badge">غير متصل</span></div>
+    </div>
+    <div class="card">
+      <button onclick="startBot()">ابدأ التداول</button>
+      <button class="danger" onclick="stopBot()">إيقاف التداول</button>
+      <div class="muted" style="text-align:center;margin-top:8px">سيتم تفعيل التداول الفعلي بعد ربط خادم MT5</div>
     </div>
   </div>
 
-  <button class="secondary" onclick="logout()">تسجيل الخروج</button>
+  <div id="tabTrades" class="tab">
+    <div class="card">
+      <div class="row"><b>الصفقات</b><span class="muted" id="tradesCount"></span></div>
+      <div id="tradesList"></div>
+    </div>
+  </div>
+
+  <div id="tabLogs" class="tab">
+    <div class="card">
+      <div class="row"><b>السجلات</b></div>
+      <div id="logsList"></div>
+    </div>
+  </div>
+
+  <div id="tabSettings" class="tab">
+    <div class="card">
+      <div class="row"><span>نسبة المخاطرة</span><span id="riskView">1%</span></div>
+      <input type="range" min="1" max="100" value="1" id="riskRange"
+        oninput="document.getElementById('riskView').textContent=this.value+'%'">
+      <button class="secondary" onclick="saveRisk()">حفظ نسبة المخاطرة</button>
+    </div>
+    <div class="card">
+      <label>الحد الأقصى للخسارة اليومية %</label>
+      <input id="maxLoss" type="number" value="10">
+      <label>أقصى عدد صفقات مفتوحة</label>
+      <input id="maxTrades" type="number" value="3">
+      <button class="secondary" onclick="saveLimits()">حفظ الحدود</button>
+    </div>
+    <button class="danger" onclick="logout()">تسجيل الخروج</button>
+  </div>
+
+  <nav class="nav" id="nav">
+    <button class="sel" onclick="goTab('Home',this)"><span class="ic">🏠</span>الرئيسية</button>
+    <button onclick="goTab('Trades',this)"><span class="ic">📊</span>الصفقات</button>
+    <button onclick="goTab('Logs',this)"><span class="ic">📜</span>السجلات</button>
+    <button onclick="goTab('Settings',this)"><span class="ic">⚙️</span>الإعدادات</button>
+  </nav>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-// ⚠️ بيانات Supabase
 const SUPABASE_URL = "https://czhtuqypomoezqxjwybj.supabase.co";
 const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN6aHR1cXlwb21vZXpxeGp3eWJqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgyNTk4OTQsImV4cCI6MjEwMzgzNTg5NH0.pBzF1QE7h09tF8CdXrqOynX0If8SGa6JlrkUoDsYMd4";
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+let UID = null;
 
 function show(id){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
 }
-function msg(t, ok){
-  const m = document.getElementById('msg');
-  m.textContent = t; m.className = ok ? 'ok' : 'err';
+
+function goTab(name, btn){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab'+name).classList.add('active');
+  document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+  if(name==='Trades') loadTrades();
+  if(name==='Logs') loadLogs();
 }
 
 async function register(){
   const name = document.getElementById('regName').value.trim();
   const email = document.getElementById('regEmail').value.trim();
   const password = document.getElementById('regPassword').value;
-
   const { data, error } = await sb.auth.signUp({
-    email: email,
-    password: password,
+    email: email, password: password,
     options: { data: { full_name: name } }
   });
-
   const m = document.getElementById('msg2');
   if(error){ m.textContent = error.message; m.className='err'; return; }
-
   if(data.session){ openDash(); }
-  else{
-    m.textContent = 'تم إنشاء الحساب. تحقق من إيميلك ثم سجل الدخول.';
-    m.className='ok';
-    setTimeout(function(){ show('loginScreen'); }, 1500);
-  }
+  else{ m.textContent='تم إنشاء الحساب. تحقق من إيميلك ثم سجل الدخول.'; m.className='ok';
+    setTimeout(function(){ show('loginScreen'); },1500); }
 }
 
 async function login(){
@@ -133,49 +167,95 @@ async function login(){
     email: document.getElementById('loginEmail').value.trim(),
     password: document.getElementById('loginPassword').value
   });
-  if(error){ msg(error.message,false); return; }
+  const m = document.getElementById('msg');
+  if(error){ m.textContent = error.message; m.className='err'; return; }
   openDash();
 }
 
 async function logout(){
   await sb.auth.signOut();
+  UID = null;
+  document.getElementById('nav').classList.remove('active');
   show('loginScreen');
 }
 
 async function openDash(){
-  show('dashScreen');
+  show('appScreen');
+  document.getElementById('nav').classList.add('active');
   const { data } = await sb.auth.getUser();
-  const user = data.user;
+  const u = data.user; UID = u.id;
   document.getElementById('welcome').textContent =
-    'أهلًا ' + ((user.user_metadata && user.user_metadata.full_name) || user.email);
-  loadSettings(user.id);
+    'أهلًا ' + ((u.user_metadata && u.user_metadata.full_name) || u.email.split('@')[0]);
+  loadSettings();
 }
 
-async function loadSettings(uid){
-  const { data } = await sb.from('bot_settings')
-    .select('*').eq('user_id', uid).maybeSingle();
+async function loadSettings(){
+  const { data } = await sb.from('bot_settings').select('*').eq('user_id', UID).maybeSingle();
   if(data){
     document.getElementById('riskRange').value = data.risk_percent;
     document.getElementById('riskView').textContent = data.risk_percent + '%';
-    const st = document.getElementById('botStatus');
-    st.textContent = data.bot_status === 'running' ? 'يعمل' : 'متوقف';
-    st.className = 'badge' + (data.bot_status==='running' ? ' on' : '');
+    document.getElementById('maxLoss').value = data.max_daily_loss_percent;
+    document.getElementById('maxTrades').value = data.max_open_trades;
+    setBotBadge(data.bot_status);
   }
 }
 
+function setBotBadge(st){
+  const el = document.getElementById('botStatus');
+  el.textContent = st === 'running' ? 'يعمل' : 'متوقف';
+  el.className = 'badge ' + (st === 'running' ? 'on' : 'off');
+}
+
+async function startBot(){
+  await sb.from('bot_settings').update({ bot_status:'running' }).eq('user_id', UID);
+  setBotBadge('running');
+  alert('تم تشغيل البوت (وضع تجريبي). سيبدأ التداول الفعلي بعد ربط خادم MT5.');
+}
+
+async function stopBot(){
+  await sb.from('bot_settings').update({ bot_status:'stopped' }).eq('user_id', UID);
+  setBotBadge('stopped');
+  alert('تم إيقاف البوت.');
+}
+
 async function saveRisk(){
-  const { data } = await sb.auth.getUser();
-  await sb.from('bot_settings')
-    .update({ risk_percent: document.getElementById('riskRange').value })
-    .eq('user_id', data.user.id);
+  await sb.from('bot_settings').update({ risk_percent: document.getElementById('riskRange').value }).eq('user_id', UID);
   alert('تم حفظ نسبة المخاطرة: ' + document.getElementById('riskRange').value + '%');
 }
 
-function startBot(){
-  alert('سيتم تفعيل التداول بعد تجهيز خادم MT5 في المرحلة القادمة.');
+async function saveLimits(){
+  await sb.from('bot_settings').update({
+    max_daily_loss_percent: document.getElementById('maxLoss').value,
+    max_open_trades: document.getElementById('maxTrades').value
+  }).eq('user_id', UID);
+  alert('تم حفظ الحدود بنجاح.');
 }
-function stopBot(){
-  alert('تم الإيقاف.');
+
+async function loadTrades(){
+  const { data, error } = await sb.from('trades').select('*')
+    .eq('user_id', UID).order('opened_at', { ascending:false }).limit(50);
+  const list = document.getElementById('tradesList');
+  if(error){ list.innerHTML = '<div class="muted">تعذر تحميل الصفقات</div>'; return; }
+  document.getElementById('tradesCount').textContent = data.length ? data.length + ' صفقة' : '';
+  if(!data.length){ list.innerHTML = '<div class="muted">لا توجد صفقات بعد</div>'; return; }
+  list.innerHTML = data.map(function(t){
+    return '<div class="item">' +
+      '<div class="row"><b>' + t.symbol + '</b><span class="' + (t.profit >= 0 ? 'green' : 'red') + '">' + (t.profit != null ? t.profit : '') + '</span></div>' +
+      '<div class="row muted"><span>' + t.trade_type + ' • ' + t.volume + '</span><span>' + t.status + '</span></div>' +
+      '</div>';
+  }).join('');
+}
+
+async function loadLogs(){
+  const { data, error } = await sb.from('bot_logs').select('*')
+    .eq('user_id', UID).order('created_at', { ascending:false }).limit(50);
+  const list = document.getElementById('logsList');
+  if(error){ list.innerHTML = '<div class="muted">تعذر تحميل السجلات</div>'; return; }
+  if(!data.length){ list.innerHTML = '<div class="muted">لا توجد سجلات بعد</div>'; return; }
+  list.innerHTML = data.map(function(l){
+    return '<div class="item"><div class="row"><span>' + l.message + '</span></div>' +
+      '<div class="muted">' + new Date(l.created_at).toLocaleString() + '</div></div>';
+  }).join('');
 }
 
 sb.auth.getSession().then(function(res){
