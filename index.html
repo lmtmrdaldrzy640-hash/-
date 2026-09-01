@@ -15,7 +15,7 @@ h1{text-align:center;margin:20px 0 4px;font-size:26px;}
 .sub{text-align:center;color:var(--muted);margin-bottom:20px;font-size:13px;}
 .card{background:var(--card);border-radius:16px;padding:16px;margin-bottom:12px;border:1px solid var(--border);}
 label{display:block;color:var(--muted);margin:8px 0 4px;font-size:13px;}
-input{width:100%;padding:12px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:#fff;}
+input,select{width:100%;padding:12px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:#fff;}
 button{width:100%;padding:14px;border:none;border-radius:12px;background:var(--green);color:#04281c;font-weight:bold;font-size:16px;margin-top:10px;}
 button.secondary{background:#1B2A44;color:var(--text);}
 button.danger{background:var(--red);color:#fff;}
@@ -30,8 +30,8 @@ button.danger{background:var(--red);color:#fff;}
 .green{color:var(--green);} .red{color:var(--red);}
 .nav{position:fixed;bottom:0;left:0;right:0;max-width:480px;margin:auto;background:#0E1626;border-top:1px solid var(--border);display:none;justify-content:space-around;padding:8px 0;z-index:10;}
 .nav.active{display:flex;}
-.nav button{width:auto;background:none;color:var(--muted);font-size:11px;margin:0;padding:4px 12px;border-radius:10px;}
-.nav button .ic{display:block;font-size:20px;margin-bottom:2px;}
+.nav button{width:auto;background:none;color:var(--muted);font-size:10px;margin:0;padding:4px 8px;border-radius:10px;}
+.nav button .ic{display:block;font-size:19px;margin-bottom:2px;}
 .nav button.sel{color:var(--green);}
 .tab{display:none;}
 .tab.active{display:block;}
@@ -77,7 +77,7 @@ input[type=range]{width:100%;}
   <div id="tabHome" class="tab active">
     <div class="card">
       <div class="row"><span>حالة البوت</span><span class="badge off" id="botStatus">متوقف</span></div>
-      <div class="row"><span>حساب MT5</span><span class="badge">غير متصل</span></div>
+      <div class="row"><span>حساب MT5</span><span class="badge" id="mt5Home">غير متصل</span></div>
     </div>
     <div class="card">
       <button onclick="startBot()">ابدأ التداول</button>
@@ -90,6 +90,28 @@ input[type=range]{width:100%;}
     <div class="card">
       <div class="row"><b>الصفقات</b><span class="muted" id="tradesCount"></span></div>
       <div id="tradesList"></div>
+    </div>
+  </div>
+
+  <div id="tabMT5" class="tab">
+    <div class="card">
+      <div class="row"><span>حالة الربط</span><span class="badge off" id="mt5State">غير مربوط</span></div>
+      <label>رقم حساب MT5</label>
+      <input id="mt5Login" type="number" placeholder="مثال: 12345678">
+      <label>اسم السيرفر</label>
+      <input id="mt5Server" placeholder="مثال: MetaQuotes-Demo">
+      <label>كلمة مرور الحساب</label>
+      <input id="mt5Password" type="password" placeholder="********">
+      <label>نوع الحساب</label>
+      <select id="mt5Type">
+        <option value="demo">تجريبي Demo</option>
+        <option value="real">حقيقي Real</option>
+      </select>
+      <button onclick="saveMT5()">حفظ حساب MT5</button>
+      <button class="danger" onclick="deleteMT5()">حذف الحساب المحفوظ</button>
+      <div class="muted" style="text-align:center;margin-top:8px">
+        تنبيه: لا تربط حسابًا حقيقيًا قبل اختبار البوت على حساب تجريبي.
+      </div>
     </div>
   </div>
 
@@ -120,6 +142,7 @@ input[type=range]{width:100%;}
   <nav class="nav" id="nav">
     <button class="sel" onclick="goTab('Home',this)"><span class="ic">🏠</span>الرئيسية</button>
     <button onclick="goTab('Trades',this)"><span class="ic">📊</span>الصفقات</button>
+    <button onclick="goTab('MT5',this)"><span class="ic">🔗</span>الحساب</button>
     <button onclick="goTab('Logs',this)"><span class="ic">📜</span>السجلات</button>
     <button onclick="goTab('Settings',this)"><span class="ic">⚙️</span>الإعدادات</button>
   </nav>
@@ -145,6 +168,7 @@ function goTab(name, btn){
   btn.classList.add('sel');
   if(name==='Trades') loadTrades();
   if(name==='Logs') loadLogs();
+  if(name==='MT5') loadMT5();
 }
 
 async function register(){
@@ -187,6 +211,7 @@ async function openDash(){
   document.getElementById('welcome').textContent =
     'أهلًا ' + ((u.user_metadata && u.user_metadata.full_name) || u.email.split('@')[0]);
   loadSettings();
+  loadMT5();
 }
 
 async function loadSettings(){
@@ -229,6 +254,54 @@ async function saveLimits(){
     max_open_trades: document.getElementById('maxTrades').value
   }).eq('user_id', UID);
   alert('تم حفظ الحدود بنجاح.');
+}
+
+async function saveMT5(){
+  const login = document.getElementById('mt5Login').value.trim();
+  const server = document.getElementById('mt5Server').value.trim();
+  const pass = document.getElementById('mt5Password').value;
+  const type = document.getElementById('mt5Type').value;
+  if(!login || !server || !pass){ alert('عبّي جميع الحقول أولًا'); return; }
+  const { error } = await sb.from('mt5_accounts').upsert(
+    { user_id: UID, mt5_login: login, mt5_server: server, mt5_password: pass,
+      account_type: type, updated_at: new Date().toISOString() },
+    { onConflict: 'user_id' }
+  );
+  if(error){ alert('خطأ: ' + error.message); return; }
+  alert('تم حفظ حساب MT5 بنجاح');
+  setMT5Badge(true);
+}
+
+async function loadMT5(){
+  const { data } = await sb.from('mt5_accounts').select('*').eq('user_id', UID).maybeSingle();
+  if(data){
+    setMT5Badge(true);
+    document.getElementById('mt5Login').value = data.mt5_login;
+    document.getElementById('mt5Server').value = data.mt5_server;
+    document.getElementById('mt5Type').value = data.account_type;
+    document.getElementById('mt5Password').placeholder = '•••••••• (محفوظة)';
+  } else {
+    setMT5Badge(false);
+  }
+}
+
+function setMT5Badge(on){
+  const el = document.getElementById('mt5State');
+  el.textContent = on ? 'محفوظ ✔' : 'غير مربوط';
+  el.className = 'badge ' + (on ? 'on' : 'off');
+  const hb = document.getElementById('mt5Home');
+  hb.textContent = on ? 'محفوظ' : 'غير متصل';
+  hb.className = 'badge ' + (on ? 'on' : '');
+}
+
+async function deleteMT5(){
+  if(!confirm('هل تريد حذف حساب MT5 المحفوظ؟')) return;
+  await sb.from('mt5_accounts').delete().eq('user_id', UID);
+  setMT5Badge(false);
+  document.getElementById('mt5Login').value = '';
+  document.getElementById('mt5Server').value = '';
+  document.getElementById('mt5Password').value = '';
+  alert('تم الحذف.');
 }
 
 async function loadTrades(){
