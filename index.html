@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0B1220">
+<title>AutoMT5 Bot</title>
+<style>
+  :root{
+    --bg:#0B1220; --card:#111A2E; --green:#16C784; --red:#EA3943; --blue:#3B82F6;
+    --text:#ffffff; --muted:#94A3B8;
+  }
+  *{box-sizing:border-box; font-family:Tahoma, Arial, sans-serif;}
+  body{margin:0; background:var(--bg); color:var(--text);}
+  .screen{display:none; min-height:100vh; padding:16px; max-width:480px; margin:auto;}
+  .screen.active{display:block;}
+  h1{text-align:center; margin:24px 0 4px;}
+  .sub{text-align:center; color:var(--muted); margin-bottom:24px;}
+  .card{background:var(--card); border-radius:16px; padding:16px; margin-bottom:12px;}
+  label{display:block; color:var(--muted); margin:8px 0 4px;}
+  input{width:100%; padding:12px; border-radius:10px; border:1px solid #22304a; background:#0B1220; color:#fff;}
+  button{width:100%; padding:14px; border:none; border-radius:12px; background:var(--green); color:#04281c; font-weight:bold; font-size:16px; margin-top:12px;}
+  button.secondary{background:#1B2A44; color:var(--text);}
+  button.danger{background:var(--red); color:#fff;}
+  .link{color:var(--blue); text-align:center; display:block; margin-top:12px; cursor:pointer;}
+  .row{display:flex; justify-content:space-between; margin:6px 0;}
+  .muted{color:var(--muted);}
+  .badge{padding:4px 10px; border-radius:999px; background:#1B2A44; color:var(--muted);}
+  .badge.on{background:#0E3B2E; color:var(--green);}
+  #msg,#msg2{min-height:20px; text-align:center; margin-top:8px;}
+  .err{color:var(--red);} .ok{color:var(--green);}
+</style>
+</head>
+<body>
+
+<div id="loginScreen" class="screen active">
+  <h1>AutoMT5 Bot</h1>
+  <div class="sub">لوحة التحكم الآمنة للتداول</div>
+  <div class="card">
+    <label>الإيميل</label>
+    <input id="loginEmail" type="email" placeholder="you@email.com">
+    <label>كلمة المرور</label>
+    <input id="loginPassword" type="password" placeholder="********">
+    <button onclick="login()">تسجيل الدخول</button>
+    <span class="link" onclick="show('registerScreen')">ليس لديك حساب؟ أنشئ حسابًا</span>
+    <div id="msg"></div>
+  </div>
+</div>
+
+<div id="registerScreen" class="screen">
+  <h1>حساب جديد</h1>
+  <div class="card">
+    <label>الاسم</label>
+    <input id="regName" placeholder="اسمك">
+    <label>الإيميل</label>
+    <input id="regEmail" type="email">
+    <label>كلمة المرور</label>
+    <input id="regPassword" type="password">
+    <button onclick="register()">إنشاء حساب</button>
+    <span class="link" onclick="show('loginScreen')">لديك حساب؟ سجل الدخول</span>
+    <div id="msg2"></div>
+  </div>
+</div>
+
+<div id="dashScreen" class="screen">
+  <h1>AutoMT5 Bot</h1>
+  <div class="sub" id="welcome"></div>
+
+  <div class="card">
+    <div class="row"><span>حالة البوت</span><span class="badge" id="botStatus">متوقف</span></div>
+    <div class="row"><span>حساب MT5</span><span class="badge">غير متصل</span></div>
+  </div>
+
+  <div class="card">
+    <div class="row"><span>نسبة المخاطرة</span><span id="riskView">1%</span></div>
+    <input type="range" min="1" max="100" value="1" id="riskRange"
+      oninput="document.getElementById('riskView').textContent=this.value+'%'">
+    <button class="secondary" onclick="saveRisk()">حفظ نسبة المخاطرة</button>
+  </div>
+
+  <div class="card">
+    <button onclick="startBot()">ابدأ التداول</button>
+    <button class="danger" onclick="stopBot()">إيقاف التداول</button>
+    <div class="muted" style="text-align:center;margin-top:8px">
+      سيتم تفعيل التداول بعد ربط خادم MT5
+    </div>
+  </div>
+
+  <button class="secondary" onclick="logout()">تسجيل الخروج</button>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// ⚠️ بيانات Supabase
+const SUPABASE_URL = "https://czhtuqypomoezqxjwybj.supabase.co";
+const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN6aHR1cXlwb21vZXpxeGp3eWJqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgyNTk4OTQsImV4cCI6MjEwMzgzNTg5NH0.pBzF1QE7h09tF8CdXrqOynX0If8SGa6JlrkUoDsYMd4";
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+function show(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function msg(t, ok){
+  const m = document.getElementById('msg');
+  m.textContent = t; m.className = ok ? 'ok' : 'err';
+}
+
+async function register(){
+  const name = document.getElementById('regName').value.trim();
+  const email = document.getElementById('regEmail').value.trim();
+  const password = document.getElementById('regPassword').value;
+
+  const { data, error } = await sb.auth.signUp({
+    email: email,
+    password: password,
+    options: { data: { full_name: name } }
+  });
+
+  const m = document.getElementById('msg2');
+  if(error){ m.textContent = error.message; m.className='err'; return; }
+
+  if(data.session){ openDash(); }
+  else{
+    m.textContent = 'تم إنشاء الحساب. تحقق من إيميلك ثم سجل الدخول.';
+    m.className='ok';
+    setTimeout(function(){ show('loginScreen'); }, 1500);
+  }
+}
+
+async function login(){
+  const { error } = await sb.auth.signInWithPassword({
+    email: document.getElementById('loginEmail').value.trim(),
+    password: document.getElementById('loginPassword').value
+  });
+  if(error){ msg(error.message,false); return; }
+  openDash();
+}
+
+async function logout(){
+  await sb.auth.signOut();
+  show('loginScreen');
+}
+
+async function openDash(){
+  show('dashScreen');
+  const { data } = await sb.auth.getUser();
+  const user = data.user;
+  document.getElementById('welcome').textContent =
+    'أهلًا ' + ((user.user_metadata && user.user_metadata.full_name) || user.email);
+  loadSettings(user.id);
+}
+
+async function loadSettings(uid){
+  const { data } = await sb.from('bot_settings')
+    .select('*').eq('user_id', uid).maybeSingle();
+  if(data){
+    document.getElementById('riskRange').value = data.risk_percent;
+    document.getElementById('riskView').textContent = data.risk_percent + '%';
+    const st = document.getElementById('botStatus');
+    st.textContent = data.bot_status === 'running' ? 'يعمل' : 'متوقف';
+    st.className = 'badge' + (data.bot_status==='running' ? ' on' : '');
+  }
+}
+
+async function saveRisk(){
+  const { data } = await sb.auth.getUser();
+  await sb.from('bot_settings')
+    .update({ risk_percent: document.getElementById('riskRange').value })
+    .eq('user_id', data.user.id);
+  alert('تم حفظ نسبة المخاطرة: ' + document.getElementById('riskRange').value + '%');
+}
+
+function startBot(){
+  alert('سيتم تفعيل التداول بعد تجهيز خادم MT5 في المرحلة القادمة.');
+}
+function stopBot(){
+  alert('تم الإيقاف.');
+}
+
+sb.auth.getSession().then(function(res){
+  if(res.data.session) openDash();
+});
+</script>
+</body>
+</html>
